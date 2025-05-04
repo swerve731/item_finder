@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Finder</title>
+    <link rel="stylesheet" href="/static/main.css">
+</head>
+<body>
+    <header>
+        <h1>Item Finder</h1>
+        <ul id="menu" >
+            <li onclick="toggleNav()"><a href="/">Home</a></li>
+            <li onclick="toggleNav()"><a href="/search">Search</a></li>
+        </ul>
+        <div id="ham" onclick="toggleNav()">
+            <span></span>
+            <span></span>
+        </div>
+    </header>
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+    <footer>
+        <p>&copy; 2023 Item Finder</p>
+    </footer>
+</body>
+</html>
+<script src="/static/nav.js"></script>

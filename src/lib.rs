@@ -4,7 +4,7 @@ use actix_web::{
     App, HttpResponse, HttpServer,
 };
 use derive_more::derive::{Display, Error};
-
+pub mod web;
 
 
 #[derive(Debug, derive_more::From, Display, Error)]
@@ -19,9 +19,7 @@ pub enum Error {
         message: String,
     }
 
-
 }
-
 
 impl error::ResponseError for Error {
     fn error_response(&self) -> HttpResponse {
