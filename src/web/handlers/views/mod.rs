@@ -10,3 +10,4 @@ pub mod templates;
 pub async fn index() -> Result<Html, Error> {
     Ok(Html::new(templates::IndexTemplate {}.render()?))
 }
+

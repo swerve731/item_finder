@@ -5,7 +5,8 @@ use actix_web::{
 };
 use derive_more::derive::{Display, Error};
 pub mod web;
-
+pub mod scraping;
+pub mod models;
 
 #[derive(Debug, derive_more::From, Display, Error)]
 pub enum Error {
