@@ -1,5 +1,5 @@
 use actix_web::{get, web, App, HttpServer};
-use item_finder::{scraping::{client::default_client, product_scraping::ProductScraping}, web::handlers::views::index};
+use item_finder::{scraping::{client::default_client, product_scraping::{infra::ProductScraping, ProductSearch}}, web::handlers::views::index};
 
 // This struct represents state
 struct AppState {
@@ -10,11 +10,11 @@ struct AppState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let mut item_reciever = item_finder::scraping::product_scraping::stockx::StockxScraper::stream_product_search(
-        default_client().await.unwrap(),
-        "jordans",
-        60
-    ).await.unwrap();
+
+    let mut item_reciever = ProductSearch::default("jordan".to_string())
+        .stream_search(default_client().await.unwrap())
+        .await
+        .unwrap();
 
     while let Some(item) = item_reciever.recv().await {
         match item {
@@ -36,6 +36,7 @@ async fn main() -> std::io::Result<()> {
     //         }))
     //         .service(actix_files::Files::new("/static", "./static"))
     //         .service(index)
+
     // })
     // .bind(("127.0.0.1", 8080))?
     // .run()

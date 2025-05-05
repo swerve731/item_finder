@@ -1,17 +1,85 @@
-use tokio::sync::mpsc;
 
 use crate::models::Product;
-pub mod stockx;
-
 use crate::scraping::error::Error;
+use infra::ProductScraping;
+pub mod scrapers;
 
-#[async_trait::async_trait]
-pub trait ProductScraping {
-    fn base_search_url() -> String;
-    async fn parse_product_element(element: String) -> Result<Product, Error>;
-    async fn stream_product_search( c: fantoccini::Client, term: &str, limit: usize) -> Result<mpsc::Receiver<Result<Product, Error>>, Error>;
-    async fn select_price( element: String) -> Result<f64, Error>;
-    async fn select_title( element: String) -> Result<String, Error>;
-    async fn select_image_url( element: String) -> Result<String, Error>;
-    async fn select_product_url( element: String) -> Result<String, Error>;
+use scrapers::stockx::StockxScraper;
+pub mod infra;
+
+
+
+// Make SearchProducts non-generic
+pub struct ProductSearch {
+    pub term: String,
+    pub limit: usize,
+    pub scrapers: Vec<Box<dyn ProductScraping>>,
 }
+
+impl ProductSearch {
+    pub async fn stream_search(
+        self,
+        c: fantoccini::Client,
+    ) -> Result<tokio::sync::mpsc::Receiver<Result<Product, Error>>, Error> {
+        let (tx, rx) = tokio::sync::mpsc::channel(69);
+
+        
+            tokio::spawn(
+                async move {
+                    for scraper in self.scrapers {
+
+                        let result = scraper
+                            .stream_product_search(tx.clone(), c.clone(), &self.term.clone(), self.limit.clone())
+                            .await;
+                        if let Err(e) = result {
+                            eprintln!("Error: {:?}", e);
+                        }
+                    }
+                },
+            );
+        
+        
+
+        Ok(rx)
+    }
+
+    pub fn new(term: String,) -> Self {
+        Self {
+            term,
+            limit: 10,
+            scrapers: vec![],
+        }
+    }
+
+
+    pub fn default(term: String) -> Self {
+        let limit = 10; // Default limit
+        let scrapers = Self::default_scrapers();
+
+        Self {
+            term,
+            limit,
+            scrapers,
+        }
+    }
+
+    pub fn default_scrapers() -> Vec<Box<dyn ProductScraping>> {
+        vec![
+            Box::new(StockxScraper),
+            // Add more scrapers here
+        ]
+    }
+
+    pub fn with_scraper(mut self, scraper: Box<dyn ProductScraping> ) -> Self {
+
+        self.scrapers.push(scraper);
+        self
+    }
+    pub fn with_limit(mut self, limit: usize) -> Self {
+        self.limit = limit;
+        self
+    }
+}
+
+
+

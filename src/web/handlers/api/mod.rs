@@ -1,1 +1,1 @@
-// search streams
+pub mod search_products;

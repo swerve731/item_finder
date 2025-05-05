@@ -3,27 +3,28 @@ use fantoccini::Locator;
 use scraper::{Html, Selector};
 use tokio::sync::mpsc;
 
-use super::ProductScraping;
+use super::super::infra::ProductScraping;
 
+
+#[derive(Clone, Copy)]
 pub struct StockxScraper;
-
 
 
 #[async_trait::async_trait]
 impl ProductScraping for StockxScraper {
-    fn base_search_url() -> String {
+    fn base_search_url(&self,) -> String {
         "https://stockx.com/search?s=".to_string()
     }
 
-    async fn stream_product_search(c: fantoccini::Client, term: &str, limit: usize ) -> Result<mpsc::Receiver<Result<Product, Error>>, Error> {
-        let url = Self::base_search_url() + term;
+    async fn stream_product_search(&self, sender: mpsc::Sender<Result<Product, Error>>,c: fantoccini::Client, term: &str, limit: usize ) -> Result<(), Error> {
+        let url = self.base_search_url() + term;
 
-        let (tx, rx) = mpsc::channel::<Result<Product, Error>>(1);
 
         c.goto(&url).await?;
         let product_elements = c.find_all(Locator::Css(r#"div[data-testid="productTile"]"#)).await?;
         let mut i = 0;
 
+        let scraper = self.clone();
         tokio::spawn(
             async move {
                 while product_elements.len() > i && i < limit{
@@ -33,14 +34,14 @@ impl ProductScraping for StockxScraper {
 
                     match raw_element {
                         Ok(element) => {
-                            let product = Self::parse_product_element(element.clone()).await;
-                            tx.send(product)
+                            let product = scraper.parse_product_element(element.clone()).await;
+                            sender.send(product)
                                 .await
                                 .unwrap();
                             i += 1;
                         }
                         Err(err) => {
-                            tx.send(Err(err.into()))
+                            sender.send(Err(err.into()))
                                 .await
                                 .unwrap();
                             i += 1;
@@ -51,22 +52,22 @@ impl ProductScraping for StockxScraper {
                     
                     
                 };
+                drop(sender);
             }
         );
         
-
-        Ok(rx)
+        Ok(())
     
     }
 
 
-    async fn parse_product_element(element: String) -> Result<Product, Error> {
-        let title = Self::select_title(element.clone()).await?;
-        let price = Self::select_price(element.clone()).await?;
+    async fn parse_product_element(&self,element: String) -> Result<Product, Error> {
+        let title = self.select_title(element.clone()).await?;
+        let price = self.select_price(element.clone()).await?;
         // dbg!(raw_element.clone());
         
-        let image_url = Self::select_image_url(element.clone()).await?;
-        let product_url = Self::select_product_url(element.clone()).await?;           
+        let image_url = self.select_image_url(element.clone()).await?;
+        let product_url = self.select_product_url(element.clone()).await?;           
         
         Ok(Product {
             title,
@@ -76,7 +77,7 @@ impl ProductScraping for StockxScraper {
         })
     }
 
-    async fn select_price(element: String) -> Result<f64, Error> {
+    async fn select_price(&self,element: String) -> Result<f64, Error> {
         let element = Html::parse_fragment(&element);
 
         let price_selector = Selector::parse(r#"p[data-testid="product-tile-lowest-ask-amount"]"#)?;
@@ -93,7 +94,7 @@ impl ProductScraping for StockxScraper {
         Ok(parsed_price)
     }   
 
-    async fn select_title(element: String) -> Result<String, Error> {
+    async fn select_title(&self,element: String) -> Result<String, Error> {
         let element = Html::parse_fragment(&element);
 
         let title_selector = Selector::parse(r#"p[data-testid="product-tile-title"]"#)?;
@@ -105,7 +106,7 @@ impl ProductScraping for StockxScraper {
         Ok(title)
     }
 
-    async fn select_image_url(element: String) -> Result<String, Error> {
+    async fn select_image_url(&self,element: String) -> Result<String, Error> {
         
         let element = Html::parse_fragment(&element);
         let image_selector = Selector::parse(r#"img"#)?;
@@ -135,7 +136,7 @@ impl ProductScraping for StockxScraper {
         Ok(image_url)
     }
 
-    async fn select_product_url( element: String) -> Result<String, Error> {
+    async fn select_product_url(&self, element: String) -> Result<String, Error> {
         let element = Html::parse_fragment(&element);
         let product_selector = Selector::parse(r#"a[data-testid="productTile-ProductSwitcherLink"]"#)?;
         let product_url: String = element.select(&product_selector)
