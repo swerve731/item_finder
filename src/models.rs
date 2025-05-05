@@ -1,5 +1,7 @@
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Product {
     pub title: String,
     pub price: f64,

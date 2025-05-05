@@ -32,6 +32,8 @@ impl ProductScraping for StockxScraper {
                         .html(true)
                         .await;
 
+                    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+
                     match raw_element {
                         Ok(element) => {
                             let product = scraper.parse_product_element(element.clone()).await;

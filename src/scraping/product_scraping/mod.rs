@@ -22,8 +22,6 @@ impl ProductSearch {
         c: fantoccini::Client,
     ) -> Result<tokio::sync::mpsc::Receiver<Result<Product, Error>>, Error> {
         let (tx, rx) = tokio::sync::mpsc::channel(69);
-
-        
             tokio::spawn(
                 async move {
                     for scraper in self.scrapers {
@@ -37,8 +35,6 @@ impl ProductSearch {
                     }
                 },
             );
-        
-        
 
         Ok(rx)
     }

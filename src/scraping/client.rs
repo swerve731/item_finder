@@ -22,7 +22,7 @@ pub async fn default_client() -> Result<fantoccini::Client, super::error::Error>
     );
     let c = ClientBuilder::native()
         .capabilities(caps.into())
-        .connect("http://localhost:45565")
+        .connect("http://localhost:42193")
         .await
         .expect("failed to connect to WebDriver");
 
