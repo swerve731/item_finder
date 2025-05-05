@@ -10,15 +10,23 @@ struct AppState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let items = item_finder::scraping::product_scraping::stockx::StockxScraper{}.search_products(
+    let mut item_reciever = item_finder::scraping::product_scraping::stockx::StockxScraper::stream_product_search(
         default_client().await.unwrap(),
         "jordans",
         20
     ).await.unwrap();
 
-    for item in items {
-        println!("{:?}", item);
+    while let Some(item) = item_reciever.recv().await {
+        match item {
+            Ok(product) => {
+                println!("Product: {:?}", product);
+            }
+            Err(e) => {
+                eprintln!("Error: {:?}", e);
+            }
+        }
     }
+    
 
     Ok(())
     // HttpServer::new(|| {
