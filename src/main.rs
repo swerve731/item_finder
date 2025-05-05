@@ -13,7 +13,7 @@ async fn main() -> std::io::Result<()> {
     let mut item_reciever = item_finder::scraping::product_scraping::stockx::StockxScraper::stream_product_search(
         default_client().await.unwrap(),
         "jordans",
-        20
+        60
     ).await.unwrap();
 
     while let Some(item) = item_reciever.recv().await {

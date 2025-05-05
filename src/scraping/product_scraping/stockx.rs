@@ -31,14 +31,27 @@ impl ProductScraping for StockxScraper {
                 while product_elements.len() > i && i < limit{
                     let raw_element = product_elements[i]
                         .html(true)
-                        .await
-                        .unwrap();
+                        .await;
+
+                    match raw_element {
+                        Ok(element) => {
+                            let product = Self::parse_product_element(element.clone()).await;
+                            tx.send(product)
+                                .await
+                                .unwrap();
+                            i += 1;
+                        }
+                        Err(err) => {
+                            tx.send(Err(err.into()))
+                                .await
+                                .unwrap();
+                            i += 1;
+                            continue;
+                        }
+                    }
                     
                     
-                    let product = Self::parse_product_element(raw_element.clone()).await;
                     
-                    tx.send(product).await.unwrap();
-                    i+=1;
                 };
             }
         );
