@@ -32,22 +32,29 @@ impl ProductScraping for StockxScraper {
                         .html(true)
                         .await;
 
-                    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+                    // dbg!(&raw_element);
+
+                    // tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
                     match raw_element {
                         Ok(element) => {
                             let product = scraper.parse_product_element(element.clone()).await;
-                            sender.send(product)
-                                .await
-                                .unwrap();
+                            dbg!(&product);
+                            if let Err(send_err) = sender.send(product).await {
+                                eprintln!("Failed to send product: {:?}", send_err);
+                                i+=1;
+                                continue; 
+                            }
+                            
                             i += 1;
                         }
                         Err(err) => {
-                            sender.send(Err(err.into()))
+                            sender.send(Err(Error::FantocciniCmd(err)))
                                 .await
+                                .map_err(|e| format!("Error sending error to sender {:?}", e))
                                 .unwrap();
+
                             i += 1;
-                            continue;
                         }
                     }
                     
@@ -64,6 +71,7 @@ impl ProductScraping for StockxScraper {
 
 
     async fn parse_product_element(&self,element: String) -> Result<Product, Error> {
+
         let title = self.select_title(element.clone()).await?;
         let price = self.select_price(element.clone()).await?;
         // dbg!(raw_element.clone());
@@ -80,15 +88,18 @@ impl ProductScraping for StockxScraper {
     }
 
     async fn select_price(&self,element: String) -> Result<f64, Error> {
+        dbg!(element.clone());
         let element = Html::parse_fragment(&element);
 
         let price_selector = Selector::parse(r#"p[data-testid="product-tile-lowest-ask-amount"]"#)?;
+        dbg!(price_selector.clone());
         let price_string: String = element.select(&price_selector)
             .next()
             .ok_or(Error::NotFound(format!("StockX price not found for element: {:?}", element)))?
             .text()
             .collect::<String>();
-        
+        dbg!(price_string.clone());
+
         let parsed_price: f64 = price_string
             .replace("$", "")
             .parse()

@@ -10,7 +10,6 @@ struct AppState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
     // let mut item_reciever = ProductSearch::default("jordan".to_string())
     //     .stream_search(default_client().await.unwrap())
     //     .await
