@@ -18,13 +18,11 @@ impl ProductScraping for StockxScraper {
     async fn stream_product_search(c: fantoccini::Client, term: &str, limit: usize ) -> Result<mpsc::Receiver<Result<Product, Error>>, Error> {
         let url = Self::base_search_url() + term;
 
-        let (tx, mut rx) = mpsc::channel::<Result<Product, Error>>(1);
+        let (tx, rx) = mpsc::channel::<Result<Product, Error>>(1);
 
         c.goto(&url).await?;
         let product_elements = c.find_all(Locator::Css(r#"div[data-testid="productTile"]"#)).await?;
         let mut i = 0;
-
-        let mut products: Vec<Product> = Vec::new();
 
         tokio::spawn(
             async move {

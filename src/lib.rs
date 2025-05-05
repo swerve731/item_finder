@@ -1,7 +1,7 @@
 use actix_web::{
-    error, get,
+    error,
     http::{header::ContentType, StatusCode},
-    App, HttpResponse, HttpServer,
+    HttpResponse,
 };
 use derive_more::derive::{Display, Error};
 pub mod web;
