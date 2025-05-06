@@ -33,7 +33,7 @@ impl ProductScraping for StockxScraper {
                 let c = default_client()
                     .await
                     .unwrap();
-                let term = term.clone().replace(" ", "+");
+                let term = term.replace(" ", "+");
 
                 //"&available-now=true" makes sure all the products are available wich means they will all have a price
                 // this fixes the issue of some products not having a price
@@ -48,7 +48,6 @@ impl ProductScraping for StockxScraper {
                     .unwrap();
                 let mut i = 0;
 
-                let scraper = s.clone();
 
                 while product_elements.len() > i && i < limit{
                     let raw_element = product_elements[i]
@@ -62,7 +61,7 @@ impl ProductScraping for StockxScraper {
 
                     match raw_element {
                         Ok(element) => {
-                            let product = scraper.parse_product_element(element.clone()).await;
+                            let product = s.parse_product_element(element.clone()).await;
                             
                             // dbg!(&product);
                             // println!("stockx");
