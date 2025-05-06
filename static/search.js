@@ -44,6 +44,19 @@ class ProductItem {
     }
 }
 
+
+class SearchError {
+    constructor(message) {
+        this.message = message;
+    }
+
+    static fromJson(json) {
+        return new SearchError(
+            json.error
+        );
+    }
+}
+
 async function searchProducts() {
     console.log("searching products");
     let searchTerm = document.getElementById("term").value;
@@ -80,12 +93,26 @@ async function searchProducts() {
                 console.log('No more data in response.');
                 break;
             }
-            let chunk_str = decoder.decode(value, { stream: true });
-            let chunk_json = JSON.parse(chunk_str);
-            let productItem = ProductItem.fromJson(chunk_json);
-            let component = ProductItem.toComponent(productItem);
-            console.log('Product Item:', productItem);
-            searchResultsDiv.innerHTML += component;
+
+            try {
+                let chunk_str = decoder.decode(value, { stream: true });
+                let chunk_json = JSON.parse(chunk_str);
+                let productItem = ProductItem.fromJson(chunk_json);
+                let component = ProductItem.toComponent(productItem);
+                // console.log('Product Item:', productItem);
+                searchResultsDiv.innerHTML += component;
+            } catch (e) {
+                try {
+                    let chunk_str = decoder.decode(value, { stream: true });
+                    let chunk_json = JSON.parse(chunk_str);
+                    let searchError = SearchError.fromJson(chunk_json);
+                    console.error('Search Error:', searchError);
+
+                }
+                catch (e) {
+                    console.error('Error parsing chunk:', e);
+                }
+            }
             // console.log('chunk:', decoder.decode(value, { stream: true }));
         }
     } catch (error) {

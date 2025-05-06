@@ -31,6 +31,7 @@ impl ProductSearch {
                             .await;
                         if let Err(e) = result {
                             eprintln!("Error: {:?}", e);
+                            continue;
                         }
                     }
                 },
@@ -49,7 +50,7 @@ impl ProductSearch {
 
 
     pub fn default(term: String) -> Self {
-        let limit = 10; // Default limit
+        let limit = 30; 
         let scrapers = Self::default_scrapers();
 
         Self {

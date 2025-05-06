@@ -31,7 +31,7 @@ async fn search_stream(web::Json(form): web::Json<SearchForm>) -> Result<impl Re
                 Err(e) => {
                     return Ok::<actix_web::web::Bytes, Error>(Bytes::from(
                         format!("{{\"error\": \"{}\"}}", e.to_string())
-                    ));
+                    ))
                 }
             }
 

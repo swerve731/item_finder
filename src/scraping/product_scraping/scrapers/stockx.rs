@@ -25,7 +25,11 @@ impl ProductScraping for StockxScraper {
     }
 
     async fn stream_product_search(&self, sender: mpsc::Sender<Result<Product, Error>>,c: fantoccini::Client, term: &str, limit: usize ) -> Result<(), Error> {
-        let url = self.base_search_url() + term;
+        let term = &term.replace(" ", "+");
+
+        //"&available-now=true" makes sure all the products are available wich means they will all have a price
+        // this fixes the issue of some products not having a price
+        let url = self.base_search_url() + term + "&available-now=true";
 
 
         c.goto(&url).await?;
