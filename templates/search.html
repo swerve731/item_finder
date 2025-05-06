@@ -1,11 +1,15 @@
 {%extends "base.html" %}
 {% block content %}
 <div id="search">
-    <form >
-        <label for="search">Search for an item:</label>
-        <input type="text" id="search" name="search" placeholder="Enter item name">
-        <button type="submit">Search</button>
-    </form>
+    <div id="search-form">
+        <label for="term">Search for an item:</label>
+        <input type="text" id="term" name="term" placeholder="search term..." required>
+        <button onclick="searchProducts()">Search</button>
+    </div>
+
+    <div id="search-results">
+        enter a search term to start 
+    </div>
 </div>
 
 {%endblock%}

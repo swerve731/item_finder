@@ -11,7 +11,8 @@ struct SearchForm {
 }
 
 #[post("/search")]
-async fn search_stream(web::Form(form): web::Form<SearchForm>) -> Result<impl Responder, Error> {
+async fn search_stream(web::Json(form): web::Json<SearchForm>) -> Result<impl Responder, Error> {
+    println!("Search term: {}", form.term);
     let search = ProductSearch::default(form.term)
         .stream_search(crate::scraping::client::default_client().await.unwrap())
         .await
@@ -31,12 +32,6 @@ async fn search_stream(web::Form(form): web::Form<SearchForm>) -> Result<impl Re
                     return Ok::<actix_web::web::Bytes, Error>(Bytes::from(
                         format!("{{\"error\": \"{}\"}}", e.to_string())
                     ));
-                    // Handle error
-                    // eprintln!("Error: {:?}", e);
-                    // let json_error: String  = serde_json::from_str(&format!("{{\"error\": \"{}\"}}", e.to_string())).unwrap();
-                    // return Ok::<actix_web::web::Bytes, Error>(Bytes::from(
-                    //     json_error
-                    // ));
                 }
             }
 

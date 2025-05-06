@@ -34,17 +34,22 @@ impl ProductScraping for StockxScraper {
 
                     // dbg!(&raw_element);
 
-                    // tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+                    // sleep for effect
+                    tokio::time::sleep(tokio::time::Duration::from_millis(2)).await;
 
                     match raw_element {
                         Ok(element) => {
                             let product = scraper.parse_product_element(element.clone()).await;
+                            
                             dbg!(&product);
+
+                            // tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
                             if let Err(send_err) = sender.send(product).await {
                                 eprintln!("Failed to send product: {:?}", send_err);
                                 i+=1;
                                 continue; 
                             }
+                            
                             
                             i += 1;
                         }
@@ -142,7 +147,13 @@ impl ProductScraping for StockxScraper {
             .collect::<Vec<String>>();
 
         let image_url = image_urls[0]
-            .replace(" 1x", "");
+            .replace(" 1x", "")
+            // change the width and height for heigher resolutions
+            // 16:9
+            .replace("w=140", "w=280")
+            .replace("h=75", "h=150");
+
+  
 
         
 
