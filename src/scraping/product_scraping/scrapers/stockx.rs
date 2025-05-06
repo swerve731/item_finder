@@ -16,6 +16,14 @@ impl ProductScraping for StockxScraper {
         "https://stockx.com/search?s=".to_string()
     }
 
+    fn store_color(&self) -> String {
+        "#006340".to_string()
+    }
+
+    fn store_name(&self) -> String {
+        "StockX".to_string()
+    }
+
     async fn stream_product_search(&self, sender: mpsc::Sender<Result<Product, Error>>,c: fantoccini::Client, term: &str, limit: usize ) -> Result<(), Error> {
         let url = self.base_search_url() + term;
 
@@ -89,6 +97,8 @@ impl ProductScraping for StockxScraper {
             price,
             image_url,
             product_url,
+            store_name: self.store_name(),
+            store_color: self.store_color(),
         })
     }
 

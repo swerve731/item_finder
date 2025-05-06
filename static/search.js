@@ -1,16 +1,21 @@
 class ProductItem {
-    constructor(title, price, imageUrl, productUrl) {
+    constructor(title, price, imageUrl, productUrl, storeName, storeColor) {
         this.title = title;
         this.price = price;
         this.imageUrl = imageUrl;
         this.productUrl = productUrl;
+        this.storeName = storeName;
+        this.storeColor = storeColor;
     }
     static fromJson(json) {
         return new ProductItem(
             json.title,
             json.price,
             json.image_url,
-            json.product_url
+            json.product_url,
+            json.store_name,
+            json.store_color
+
         );
     }
 
@@ -32,7 +37,7 @@ class ProductItem {
                 <div class="bottom">
                     <h2>${title}</h2>
                     <p>Price: ${price}$</p>
-                    <a href="${productItem.productUrl}">View Product <i>on StockX</i></a>
+                    <a style="background-color:${productItem.storeColor}" href="${productItem.productUrl}">View Product <i>on ${productItem.storeName}</i></a>
                 </div>
             </div>
         `;
