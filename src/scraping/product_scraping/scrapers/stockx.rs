@@ -47,14 +47,14 @@ impl ProductScraping for StockxScraper {
                     // dbg!(&raw_element);
 
                     // sleep for effect
-                    tokio::time::sleep(tokio::time::Duration::from_millis(2)).await;
+                    tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
 
                     match raw_element {
                         Ok(element) => {
                             let product = scraper.parse_product_element(element.clone()).await;
                             
-                            dbg!(&product);
-
+                            // dbg!(&product);
+                            // println!("stockx");
                             // tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
                             if let Err(send_err) = sender.send(product).await {
                                 eprintln!("Failed to send product: {:?}", send_err);
@@ -86,7 +86,7 @@ impl ProductScraping for StockxScraper {
     
     }
 
-
+    
     async fn parse_product_element(&self,element: String) -> Result<Product, Error> {
 
         let title = self.select_title(element.clone()).await?;
@@ -107,17 +107,17 @@ impl ProductScraping for StockxScraper {
     }
 
     async fn select_price(&self,element: String) -> Result<f64, Error> {
-        dbg!(element.clone());
+        // dbg!(element.clone());
         let element = Html::parse_fragment(&element);
 
         let price_selector = Selector::parse(r#"p[data-testid="product-tile-lowest-ask-amount"]"#)?;
-        dbg!(price_selector.clone());
+        // dbg!(price_selector.clone());
         let price_string: String = element.select(&price_selector)
             .next()
             .ok_or(Error::NotFound(format!("StockX price not found for element: {:?}", element)))?
             .text()
             .collect::<String>();
-        dbg!(price_string.clone());
+        // dbg!(price_string.clone());
 
         let parsed_price: f64 = price_string
             .replace("$", "")

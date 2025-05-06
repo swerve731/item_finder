@@ -1,5 +1,5 @@
-use actix_web::{get, web, App, HttpServer};
-use item_finder::{scraping::{client::default_client, product_scraping::{infra::ProductScraping, ProductSearch}}, web::handlers::{api::search_products::search_stream, views::{index, search_view}}};
+use actix_web::{web, App, HttpServer};
+use item_finder::web::handlers::{api::search_products::search_stream, views::{index, search_view}};
 
 // This struct represents state
 struct AppState {
@@ -39,7 +39,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(cors)
             .app_data(web::Data::new(AppState {
-                app_name: String::from("Actix Web"),
+                app_name: String::from("Item Finder"),
             }))
             .service(actix_files::Files::new("/static", "./static"))
             .service(index)

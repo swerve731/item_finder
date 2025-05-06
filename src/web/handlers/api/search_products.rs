@@ -14,7 +14,7 @@ struct SearchForm {
 async fn search_stream(web::Json(form): web::Json<SearchForm>) -> Result<impl Responder, Error> {
     println!("Search term: {}", form.term);
     let search = ProductSearch::default(form.term)
-        .stream_search(crate::scraping::client::default_client().await.unwrap())
+        .stream_search()
         .await
         .unwrap();
 
@@ -23,7 +23,8 @@ async fn search_stream(web::Json(form): web::Json<SearchForm>) -> Result<impl Re
             match item {
                 Ok(product) => {
                     // Convert product to JSON
-                    println!("Product: {:?}", product);
+
+                    println!("product returned from {:?}", product.store_name);
                     let item = serde_json::to_string(&product).unwrap();
                     // Convert item to bytes
                     return Ok::<actix_web::web::Bytes, Error>(Bytes::from(item))

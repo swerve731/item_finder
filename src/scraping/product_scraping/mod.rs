@@ -5,6 +5,8 @@ use infra::ProductScraping;
 pub mod scrapers;
 
 use scrapers::stockx::StockxScraper;
+
+use super::client::default_client;
 pub mod infra;
 
 
@@ -19,16 +21,22 @@ pub struct ProductSearch {
 impl ProductSearch {
     pub async fn stream_search(
         self,
-        c: fantoccini::Client,
     ) -> Result<tokio::sync::mpsc::Receiver<Result<Product, Error>>, Error> {
+
+            // Create a channel for sending products
         let (tx, rx) = tokio::sync::mpsc::channel(69);
             tokio::spawn(
                 async move {
                     for scraper in self.scrapers {
-
+                        let c = default_client()
+                            .await
+                            .map_err(|e| format!("Error creating client: {:?}", e))
+                            .unwrap();
+                        
                         let result = scraper
-                            .stream_product_search(tx.clone(), c.clone(), &self.term.clone(), self.limit.clone())
+                            .stream_product_search(tx.clone(), c, &self.term.clone(), self.limit.clone())
                             .await;
+
                         if let Err(e) = result {
                             eprintln!("Error: {:?}", e);
                             continue;
@@ -63,6 +71,7 @@ impl ProductSearch {
     pub fn default_scrapers() -> Vec<Box<dyn ProductScraping>> {
         vec![
             Box::new(StockxScraper),
+            Box::new(scrapers::ebay::EbayScraper),
             // Add more scrapers here
         ]
     }
