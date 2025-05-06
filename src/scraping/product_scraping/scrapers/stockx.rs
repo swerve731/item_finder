@@ -1,4 +1,4 @@
-use crate::{models::Product, scraping::error::Error};
+use crate::{models::Product, scraping::{client::default_client, error::Error}};
 use fantoccini::Locator;
 use scraper::{Html, Selector};
 use tokio::sync::mpsc;
@@ -24,21 +24,32 @@ impl ProductScraping for StockxScraper {
         "StockX".to_string()
     }
 
-    async fn stream_product_search(&self, sender: mpsc::Sender<Result<Product, Error>>,c: fantoccini::Client, term: &str, limit: usize ) -> Result<(), Error> {
-        let term = &term.replace(" ", "+");
-
-        //"&available-now=true" makes sure all the products are available wich means they will all have a price
-        // this fixes the issue of some products not having a price
-        let url = self.base_search_url() + term + "&available-now=true";
-
-
-        c.goto(&url).await?;
-        let product_elements = c.find_all(Locator::Css(r#"div[data-testid="productTile"]"#)).await?;
-        let mut i = 0;
-
-        let scraper = self.clone();
+    async fn stream_product_search(&self, sender: mpsc::Sender<Result<Product, Error>>, term: String, limit: usize ) -> Result<(), Error> {
+        let term = term.clone();
+        let s = self.clone();
         tokio::spawn(
+
             async move {
+                let c = default_client()
+                    .await
+                    .unwrap();
+                let term = term.clone().replace(" ", "+");
+
+                //"&available-now=true" makes sure all the products are available wich means they will all have a price
+                // this fixes the issue of some products not having a price
+                let url = s.base_search_url() + &term + "&available-now=true";
+
+
+                c.goto(&url)
+                    .await
+                    .unwrap();
+                let product_elements = c.find_all(Locator::Css(r#"div[data-testid="productTile"]"#))
+                    .await
+                    .unwrap();
+                let mut i = 0;
+
+                let scraper = s.clone();
+
                 while product_elements.len() > i && i < limit{
                     let raw_element = product_elements[i]
                         .html(true)
@@ -47,7 +58,7 @@ impl ProductScraping for StockxScraper {
                     // dbg!(&raw_element);
 
                     // sleep for effect
-                    tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+                    // tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
 
                     match raw_element {
                         Ok(element) => {

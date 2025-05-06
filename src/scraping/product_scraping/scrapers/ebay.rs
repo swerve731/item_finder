@@ -1,4 +1,4 @@
-use crate::{models::Product, scraping::error::Error};
+use crate::{models::Product, scraping::{client::default_client, error::Error}};
 use fantoccini::Locator;
 use scraper::{Html, Selector};
 use tokio::sync::mpsc;
@@ -21,17 +21,26 @@ impl ProductScraping for EbayScraper {
         "#E53238".to_string()
     }
 
-    async fn stream_product_search(&self, sender: mpsc::Sender<Result<Product, Error>>, c: fantoccini::Client, term: &str, limit: usize) -> Result<(), Error>{
-        let term = &term.replace(" ", "+");
-
-        let url = self.base_search_url() + term;
-        c.goto(&url).await?;
-        let product_elements = c.find_all(Locator::Css(r#"li.s-item"#)).await?;
-        let mut i = 0;
-
-        let scraper = self.clone();
+    async fn stream_product_search(&self, sender: mpsc::Sender<Result<Product, Error>>, term: String, limit: usize) -> Result<(), Error>{
+        let term = term.clone();
+       
+        let s = self.clone();
         tokio::spawn(
             async move {
+                let term = term.replace(" ", "+");
+                let url = s.base_search_url() + &term;
+        
+                let c = default_client()
+                    .await
+                    .unwrap();
+                c.goto(&url)
+                    .await
+                    .unwrap();
+                let product_elements = c.find_all(Locator::Css(r#"li.s-item"#))
+                    .await
+                    .unwrap();
+                let mut i = 0;
+        
                 while product_elements.len() > i && i < limit{
                     let raw_element = product_elements[i]
                         .html(true)
@@ -39,11 +48,11 @@ impl ProductScraping for EbayScraper {
 
 
                     // sleep for effect
-                    tokio::time::sleep(tokio::time::Duration::from_millis(2)).await;
+                    // tokio::time::sleep(tokio::time::Duration::from_millis(2)).await;
 
                     match raw_element {
                         Ok(element) => {
-                            let product = scraper.parse_product_element(element.clone()).await;
+                            let product = s.parse_product_element(element.clone()).await;
                             // println!("ebay");
                             match product {
                                 Ok(product) => {

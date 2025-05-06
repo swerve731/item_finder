@@ -24,7 +24,7 @@ async fn search_stream(web::Json(form): web::Json<SearchForm>) -> Result<impl Re
                 Ok(product) => {
                     // Convert product to JSON
 
-                    println!("product returned from {:?}", product.store_name);
+                    // println!("product returned from {:?}", product.store_name);
                     let item = serde_json::to_string(&product).unwrap();
                     // Convert item to bytes
                     return Ok::<actix_web::web::Bytes, Error>(Bytes::from(item))
