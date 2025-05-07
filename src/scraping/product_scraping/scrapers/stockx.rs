@@ -31,7 +31,6 @@ impl ProductScraping for StockxScraper {
     }
     
     async fn parse_product_element(&self,element: String) -> Result<Product, Error> {
-
         let title = self.select_title(element.clone()).await?;
         let price = self.select_price(element.clone()).await?;
         // dbg!(raw_element.clone());
@@ -64,6 +63,7 @@ impl ProductScraping for StockxScraper {
 
         let parsed_price: f64 = price_string
             .replace("$", "")
+            .replace(",", "")
             .parse()
             .map_err(|e| Error::WrongDataType(format!("Could not parse the stockX price element: {:?}\n\n Parsing Error: {:?}", price_string, e)))?;
         Ok(parsed_price)

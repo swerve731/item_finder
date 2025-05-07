@@ -1,6 +1,6 @@
 
 use crate::models::Product;
-use crate::scraping::client::start_client;
+use crate::scraping::client::OneTimeClient;
 use crate::scraping::error::Error;
 
 use infra::ProductScraping;
@@ -36,19 +36,22 @@ impl ProductSearch {
 
                         tokio::spawn(
                             async move {
-
+                                
                                 let term = term.replace(" ", "+");
                                 let url = scraper.format_search_term_url(term);
                                 println!("scraping store: {:?}", scraper.store_name());
-                                let c = start_client()
+                                let c = OneTimeClient::start_client()
                                     .await
                                     .unwrap();
-                                c.goto(&url)
-                                    .await
-                                    .unwrap();
-                                println!("goto");
 
-                                let product_elements = scraper.select_product_elements(c)
+                                c.client.goto(&url)
+                                    .await
+                                    .unwrap();
+
+                                println!("goto");
+                          
+
+                                let product_elements = scraper.select_product_elements(c.client.clone())
                                     .await
                                     .unwrap();
 
@@ -60,7 +63,7 @@ impl ProductSearch {
                                         .html(true)
                                         .await;
 
-
+               
                                     // sleep for effect
                                     // tokio::time::sleep(tokio::time::Duration::from_millis(2)).await;
                                     match raw_element {
@@ -106,7 +109,7 @@ impl ProductSearch {
                                     
                                     
                                 };
-
+                                drop(c);
                                 // let result = scraper
                                 //     .stream_product_search( tx.clone(), term, self.limit.clone());
     
@@ -115,6 +118,7 @@ impl ProductSearch {
                                 //     eprintln!("Error: {:?}", e);
                                 // }  
                             }
+
                         );
                                               
                     }

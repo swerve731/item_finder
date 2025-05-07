@@ -65,6 +65,7 @@ impl ProductScraping for EbayScraper {
 
             let parsed_price = price_string
                 .replace(['$', ',', '£', '€', ' '], "")
+
                 .trim()
                 .parse::<f64>()
                 .map_err(|e| Error::WrongDataType(format!("Could not parse the ebay price element: {e:?}")))?;

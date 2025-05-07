@@ -51,7 +51,7 @@ class ProductItem {
             <div class="bottom">
                 <h2>${title}</h2>
                 <p>Price: ${price}$</p>
-                <a style="background-color:${productItem.storeColor}" href="${productItem.productUrl}">View Product <i>on ${productItem.storeName}</i></a>
+                <a target="_blank" style="background-color:${productItem.storeColor}" href="${productItem.productUrl}">View Product <i>on ${productItem.storeName}</i></a>
             </div>
         `;
 
@@ -140,6 +140,7 @@ async function searchProducts() {
 
                 let image = new Image();
                 image.src = productItem.imageUrl;
+                image.width = 400;
                 let canvas = document.getElementById(canvasId);
 
                 image.onload = (function(canvasElement) {

@@ -23,10 +23,10 @@ async fn search_stream(web::Json(form): web::Json<SearchForm>) -> Result<impl Re
             match item {
                 Ok(product) => {
                     // Convert product to JSON
-                    println!("product");
+                    // println!("product");
                     // println!("product returned from {:?}", product.store_name);
                     let item = serde_json::to_string(&product).unwrap();
-                    println!("{:?}", item);
+                    // println!("{:?}", item);
                     // Convert item to bytes
                     return Ok::<actix_web::web::Bytes, Error>(Bytes::from(item))
                 }
