@@ -1,7 +1,6 @@
-use crate::{models::Product, scraping::{client::default_client, error::Error}};
-use fantoccini::Locator;
+use crate::{models::Product, scraping::error::Error};
+use fantoccini::{elements::Element, Locator};
 use scraper::{Html, Selector};
-use tokio::sync::mpsc;
 
 use super::super::infra::ProductScraping;
 
@@ -12,8 +11,8 @@ pub struct StockxScraper;
 
 #[async_trait::async_trait]
 impl ProductScraping for StockxScraper {
-    fn base_search_url(&self,) -> String {
-        "https://stockx.com/search?s=".to_string()
+    fn format_search_term_url(&self, term: String) -> String {
+        format!("https://stockx.com/search?s={}", term)
     }
 
     fn store_color(&self) -> String {
@@ -24,78 +23,12 @@ impl ProductScraping for StockxScraper {
         "StockX".to_string()
     }
 
-    async fn stream_product_search(&self, sender: mpsc::Sender<Result<Product, Error>>, term: String, limit: usize ) -> Result<(), Error> {
-        let term = term.clone();
-        let s = self.clone();
-        tokio::spawn(
+    async fn select_product_elements(&self, c: fantoccini::Client) -> Result<Vec<Element>, Error> {
+        let elements = c.find_all(Locator::Css(r#"div[data-testid="productTile"]"#))
+            .await?;
 
-            async move {
-                let c = default_client()
-                    .await
-                    .unwrap();
-                let term = term.replace(" ", "+");
-
-                //"&available-now=true" makes sure all the products are available wich means they will all have a price
-                // this fixes the issue of some products not having a price
-                let url = s.base_search_url() + &term + "&available-now=true";
-
-
-                c.goto(&url)
-                    .await
-                    .unwrap();
-                let product_elements = c.find_all(Locator::Css(r#"div[data-testid="productTile"]"#))
-                    .await
-                    .unwrap();
-                let mut i = 0;
-
-
-                while product_elements.len() > i && i < limit{
-                    let raw_element = product_elements[i]
-                        .html(true)
-                        .await;
-
-                    // dbg!(&raw_element);
-
-                    // sleep for effect
-                    // tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
-
-                    match raw_element {
-                        Ok(element) => {
-                            let product = s.parse_product_element(element.clone()).await;
-                            
-                            // dbg!(&product);
-                            // println!("stockx");
-                            // tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-                            if let Err(send_err) = sender.send(product).await {
-                                eprintln!("Failed to send product: {:?}", send_err);
-                                i+=1;
-                                continue; 
-                            }
-                            
-                            
-                            i += 1;
-                        }
-                        Err(err) => {
-                            sender.send(Err(Error::FantocciniCmd(err)))
-                                .await
-                                .map_err(|e| format!("Error sending error to sender {:?}", e))
-                                .unwrap();
-
-                            i += 1;
-                        }
-                    }
-                    
-                    
-                    
-                };
-                drop(sender);
-            }
-        );
-        
-        Ok(())
-    
+        Ok(elements)
     }
-
     
     async fn parse_product_element(&self,element: String) -> Result<Product, Error> {
 
@@ -197,5 +130,83 @@ impl ProductScraping for StockxScraper {
         let product_url = format!("https://stockx.com{}", product_url);
         Ok(product_url)
     }
+
+
+
+    // this is the originl implementation to scrap the products and has since been replaced by ProductSearch using the ProductScraping trait
+    // async fn stream_product_search(&self, sender: mpsc::Sender<Result<Product, Error>>, term: String, limit: usize ) -> Result<(), Error> {
+    //     let term = term.clone();
+    //     let s = self.clone();
+    //     tokio::spawn(
+
+    //         async move {
+    //             let term = term.replace(" ", "+");
+
+    //             //"&available-now=true" makes sure all the products are available wich means they will all have a price
+    //             // this fixes the issue of some products not having a price
+    //             let url = s.format_search_term_url(term).clone();   
+
+    //             println!("stockx url: {:?}", url);
+
+    //             let c = start_client()
+    //                 .await
+    //                 .unwrap();
+    //             println!("stockx client");
+    //             c.goto(&url)
+    //                 .await
+    //                 .unwrap();
+    //             println!("stockx goto");
+    //             let product_elements = c.find_all(Locator::Css(r#"div[data-testid="productTile"]"#))
+    //                 .await
+    //                 .unwrap();
+    //             let mut i = 0;
+    //             // println!()
+
+    //             while product_elements.len() > i && i < limit{
+    //                 let raw_element = product_elements[i]
+    //                     .html(true)
+    //                     .await;
+
+    //                 // dbg!(&raw_element);
+
+    //                 // sleep for effect
+
+    //                 match raw_element {
+    //                     Ok(element) => {
+    //                         let product = s.parse_product_element(element.clone()).await;
+                            
+    //                         // dbg!(&product);
+    //                         println!("stockx");
+    //                         // tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    //                         if let Err(send_err) = sender.send(product).await {
+    //                             eprintln!("Failed to send product: {:?}", send_err);
+    //                             i+=1;
+    //                             continue; 
+    //                         }
+                            
+                            
+    //                         i += 1;
+    //                     }
+    //                     Err(err) => {
+    //                         sender.send(Err(Error::FantocciniCmd(err)))
+    //                             .await
+    //                             .map_err(|e| format!("Error sending error to sender {:?}", e))
+    //                             .unwrap();
+
+    //                         i += 1;
+    //                     }
+    //                 }
+                    
+                    
+                    
+    //             };
+    //             drop(sender);
+    //         }
+    //     );
+        
+    //     Ok(())
+    
+    // }
+
 }
 

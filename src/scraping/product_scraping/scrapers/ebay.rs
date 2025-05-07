@@ -1,7 +1,6 @@
-use crate::{models::Product, scraping::{client::default_client, error::Error}};
-use fantoccini::Locator;
+use crate::{models::Product, scraping:: error::Error};
+use fantoccini::{elements::Element, Locator};
 use scraper::{Html, Selector};
-use tokio::sync::mpsc;
 
 use super::super::infra::ProductScraping;
 
@@ -11,8 +10,8 @@ pub struct EbayScraper;
 
 #[async_trait::async_trait]
 impl ProductScraping for EbayScraper {
-    fn base_search_url(&self) -> String{
-        "https://www.ebay.com/sch/i.html?_nkw=".to_string()
+    fn format_search_term_url(&self, term: String) -> String{
+        format!("https://www.ebay.com/sch/i.html?_nkw={}", term)
     }
     fn store_name(&self) -> String{
         "Ebay".to_string()
@@ -21,83 +20,13 @@ impl ProductScraping for EbayScraper {
         "#E53238".to_string()
     }
 
-    async fn stream_product_search(&self, sender: mpsc::Sender<Result<Product, Error>>, term: String, limit: usize) -> Result<(), Error>{
-        let term = term.clone();
-       
-        let s = self.clone();
-        tokio::spawn(
-            async move {
-                let term = term.replace(" ", "+");
-                let url = s.base_search_url() + &term;
-        
-                let c = default_client()
-                    .await
-                    .unwrap();
-                c.goto(&url)
-                    .await
-                    .unwrap();
-                let product_elements = c.find_all(Locator::Css(r#"li.s-item"#))
-                    .await
-                    .unwrap();
-                let mut i = 0;
-        
-                while product_elements.len() > i && i < limit{
-                    let raw_element = product_elements[i]
-                        .html(true)
-                        .await;
-
-
-                    // sleep for effect
-                    // tokio::time::sleep(tokio::time::Duration::from_millis(2)).await;
-
-                    match raw_element {
-                        Ok(element) => {
-                            let product = s.parse_product_element(element.clone()).await;
-                            // println!("ebay");
-                            match product {
-                                Ok(product) => {
-
-                                    // ebay has invisble elements or smthn
-                                    if product.title == "Shop on eBay" {
-                                        i += 1;
-                                        continue;
-                                    }
-                                    
-                                    sender.send(Ok(product))
-                                        .await
-                                        .map_err(|e| format!("Error sending product to sender {:?}", e))
-                                        .unwrap();
-
-                                }
-                                Err(err) => {
-                                    sender.send(Err(err))
-                                        .await
-                                        .map_err(|e| format!("Error sending error to sender {:?}", e))
-                                        .unwrap();
-                                }
-                            }
-                           
-                            i += 1;
-                        }
-                        Err(err) => {
-                            sender.send(Err(Error::FantocciniCmd(err)))
-                                .await
-                                .map_err(|e| format!("Error sending error to sender {:?}", e))
-                                .unwrap();
-
-                            i += 1;
-                        }
-                    }
-                    
-                    
-                    
-                };
-                drop(sender);
-            }
-        );
-        
-        Ok(())
     
+
+    async fn select_product_elements(&self, c: fantoccini::Client) -> Result<Vec<Element>, Error>{
+        let elements = c.find_all(Locator::Css(r#"li.s-item"#))
+            .await?;
+
+        Ok(elements)
     }
 
     async fn parse_product_element(&self, element: String) -> Result<Product, Error>{
@@ -149,7 +78,7 @@ impl ProductScraping for EbayScraper {
         let title_selector = Selector::parse(r#"div.s-item__title"#)?;
         let title: String = element.select(&title_selector)
             .next()
-            .ok_or(Error::NotFound(format!("StockX title not found for element: {:?}", element)))?
+            .ok_or(Error::NotFound(format!("Ebay title not found for element: {:?}", element)))?
             .text()
             .collect::<String>();
 
@@ -183,5 +112,100 @@ impl ProductScraping for EbayScraper {
 
         Ok(product_url)
     }
+
+
+
+
+
+
+
+
+
+
+
+
+    // this is the originl implementation to scrap the products and has since been replaced by ProductSearch using the ProductScraping trait
+    // async fn stream_product_search(&self, sender: mpsc::Sender<Result<Product, Error>>, term: String, limit: usize) -> Result<(), Error>{
+    //     let term = term.clone();
+       
+    //     let s = self.clone();
+    //     tokio::spawn(
+    //         async move {
+
+    //             let term = term.replace(" ", "+");
+    //             let url = s.format_search_term_url(term);
+    //             println!("ebay url: {:?}", url);
+
+    //             let c = start_client()
+    //                 .await
+    //                 .unwrap();
+    //             println!("ebay client");
+    //             c.goto(&url)
+    //                 .await
+    //                 .unwrap();
+    //             println!("ebay goto");
+    //             let product_elements = c.find_all(Locator::Css(r#"li.s-item"#))
+    //                 .await
+    //                 .unwrap();
+    //             let mut i = 0;
+        
+    //             while product_elements.len() > i && i < limit{
+    //                 let raw_element = product_elements[i]
+    //                     .html(true)
+    //                     .await;
+
+
+    //                 // sleep for effect
+    //                 // tokio::time::sleep(tokio::time::Duration::from_millis(2)).await;
+
+    //                 match raw_element {
+    //                     Ok(element) => {
+    //                         let product = s.parse_product_element(element.clone()).await;
+    //                         println!("ebay");
+    //                         match product {
+    //                             Ok(product) => {
+
+    //                                 // ebay has invisble elements or smthn
+    //                                 if product.title == "Shop on eBay" {
+    //                                     i += 1;
+    //                                     continue;
+    //                                 }
+                                    
+    //                                 sender.send(Ok(product))
+    //                                     .await
+    //                                     .map_err(|e| format!("Error sending product to sender {:?}", e))
+    //                                     .unwrap();
+
+    //                             }
+    //                             Err(err) => {
+    //                                 sender.send(Err(err))
+    //                                     .await
+    //                                     .map_err(|e| format!("Error sending error to sender {:?}", e))
+    //                                     .unwrap();
+    //                             }
+    //                         }
+                           
+    //                         i += 1;
+    //                     }
+    //                     Err(err) => {
+    //                         sender.send(Err(Error::FantocciniCmd(err)))
+    //                             .await
+    //                             .map_err(|e| format!("Error sending error to sender {:?}", e))
+    //                             .unwrap();
+
+    //                         i += 1;
+    //                     }
+    //                 }
+                    
+                    
+                    
+    //             };
+    //             drop(sender);
+    //         }
+    //     );
+        
+    //     Ok(())
+    
+    // }
 
 }

@@ -21,6 +21,13 @@ pub enum Error {
     Scraper{
         message: String,
     },
+    #[from]
+    #[display("could not start the client no open ports")]
+    NoOpenPorts,
+
+    #[from]
+    #[display("could not start chromedriver, check if it is installed and the start command is chromedriver")]
+    ChromeDriver(tokio::io::Error),
 }
 
 
