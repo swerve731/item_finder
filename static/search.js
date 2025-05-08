@@ -1,3 +1,5 @@
+// import '/static/stopwatch.js'
+
 function generateRandomNumberString(length) {
     let result = '';
     const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -36,7 +38,7 @@ class ProductItem {
         if (title.length > 20) {
             title = title.substring(0, 20) + "...";
         }
-        console.log("HERE");
+        // console.log("HERE");
         let price = productItem.price;
         price = price.toFixed(2);
 
@@ -79,12 +81,15 @@ class SearchError {
 // this stops the current process from add elements after the user has searched for something else 
 let active_streams = 0;
 async function searchProducts() {
-    active_streams++;
     console.log("searching products");
-    let searchTerm = document.getElementById("term").value;
+    active_streams++;
 
+    let result_count = 0;
+    let resultCountDiv = document.getElementById("result-count");
+
+    let searchTerm = document.getElementById("term").value;
     let store_filter_elements = document.getElementsByClassName("store-filter");
-    console.log(store_filter_elements);
+
     let stores = [];
     for (let i = 0; i < store_filter_elements.length; i++) {
         if (store_filter_elements[i].checked) {
@@ -92,12 +97,12 @@ async function searchProducts() {
         }
     }
 
+
     const url = '/search';
     const searchResultsDiv = document.getElementById("search-results");
     console.log("searching products with term: " + searchTerm);
-    console.log(stores);
+
     try {
-        
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -118,7 +123,13 @@ async function searchProducts() {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder(); 
-        searchResultsDiv.innerHTML = ""; // Clear previous results
+
+        searchResultsDiv.innerHTML = "";
+
+        
+        let stopwatch = new Stopwatch("stopwatch");
+
+        stopwatch.start()
         while (true) {
             if (active_streams > 1) {
 
@@ -136,25 +147,24 @@ async function searchProducts() {
             try {
                 let canvasId = "canvas" + generateRandomNumberString(10);
 
+                // get and format data
                 let chunk_str = decoder.decode(value, { stream: true });
                 let chunk_json = JSON.parse(chunk_str);
-                console.log(chunk_json)
                 let productItem = ProductItem.fromJson(chunk_json);
                 let component = ProductItem.toComponent(productItem, canvasId);
-                
                 const ItemDiv = document.createElement("div");
+
+                // add items to the dom
                 ItemDiv.classList.add("product-item");
                 ItemDiv.innerHTML = component;
-                // console.log('Product Item:', productItem);
-                // searchResultsDiv.innerHTML += component;
                 searchResultsDiv.insertAdjacentElement('beforeend', ItemDiv);
-                
 
+
+                // render image
                 let image = new Image();
                 image.src = productItem.imageUrl;
                 image.width = 400;
                 let canvas = document.getElementById(canvasId);
-
                 image.onload = (function(canvasElement) {
                     return function() {
                         let ctx = canvasElement.getContext("2d");
@@ -162,6 +172,9 @@ async function searchProducts() {
                         ctx.drawImage(image, 0, 0, 400, 200, 0, 0, 400, 200);
                     };
                 })(canvas);
+
+                result_count++;
+                resultCountDiv.innerHTML = result_count;
 
             } catch (e) {
                 console.log(e)
@@ -180,8 +193,29 @@ async function searchProducts() {
             // console.log('chunk:', decoder.decode(value, { stream: true }));
         } 
         active_streams--;
-
+        stopwatch.stop()
     } catch (error) {
         console.error('Error fetching search results:', error);
     }
 }
+
+
+// class LiveStopWatch {
+//     constructor(target_id) {
+//         this.target_id = target_id
+//         this.is_running = false
+//     }
+
+//     async start(this) {
+//         this.is_running = true;
+//         let target_element = document.getElementById(this.target_id);
+
+//         let start_time = Date.now();
+
+//          while (this.is_running){
+//             let elapsed_time = start_time - Date.now();
+//             console.log(elapsed_time)
+//             target_element.innerHTML = elapsed_time
+//         }
+//     }
+// }
