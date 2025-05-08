@@ -3,6 +3,9 @@ use fantoccini::elements::Element;
 use crate::models::Product;
 use crate::scraping::error::Error;
 
+use super::scrapers::ebay::EbayScraper;
+use super::scrapers::stockx::StockxScraper;
+
 
 #[async_trait::async_trait]
 pub trait ProductScraping: Send { 
@@ -21,3 +24,4 @@ pub trait ProductScraping: Send {
     // async fn stream_product_search(&self, sender: mpsc::Sender<Result<Product, Error>>, term: String, limit: usize) -> Result<(), Error>;
 
 }
+

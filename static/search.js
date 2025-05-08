@@ -82,9 +82,20 @@ async function searchProducts() {
     active_streams++;
     console.log("searching products");
     let searchTerm = document.getElementById("term").value;
-    const url = '/search?term=' + encodeURIComponent(searchTerm);
+
+    let store_filter_elements = document.getElementsByClassName("store-filter");
+    console.log(store_filter_elements);
+    let stores = [];
+    for (let i = 0; i < store_filter_elements.length; i++) {
+        if (store_filter_elements[i].checked) {
+            stores.push(store_filter_elements[i].value);
+        }
+    }
+
+    const url = '/search';
     const searchResultsDiv = document.getElementById("search-results");
     console.log("searching products with term: " + searchTerm);
+    console.log(stores);
     try {
         
         const response = await fetch(url, {
@@ -92,6 +103,7 @@ async function searchProducts() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 "term": searchTerm,
+                "stores": stores
             })
         });
 

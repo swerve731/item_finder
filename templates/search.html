@@ -2,11 +2,23 @@
 {% block content %}
 <div id="search">
     <div id="search-form">
+
+        <div id="search-filters">
+            <div id="store-filters">
+                {%for name in store_names %}
+                <div>
+                    <label for="{{name}}">{{name}}</label>
+                    <input class="store-filter" type="checkbox" id="{{name}}" name="name" value="{{name}}" checked>
+                </div>
+                {%endfor%}
+            </div>
+        </div>
+
         <label for="term">Search for an item:</label>
         <input type="text" id="term" name="term" placeholder="search term..." required>
         <button onclick="searchProducts()">Search</button>
     </div>
-
+    
     <div id="search-results">
         enter a search term to start 
     </div>

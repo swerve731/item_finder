@@ -9,4 +9,6 @@ pub struct IndexTemplate;
 
 #[derive(Template)]
 #[template(path = "search.html")]
-pub struct SearchTemplate;
+pub struct SearchTemplate {
+    pub store_names: Vec<String>,
+}

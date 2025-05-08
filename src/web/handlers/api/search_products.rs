@@ -8,12 +8,20 @@ use futures::stream::StreamExt;
 #[derive(serde::Deserialize)]
 struct SearchForm {
     term: String,
+    stores: Vec<String>,
 }
 
 #[post("/search")]
 async fn search_stream(web::Json(form): web::Json<SearchForm>) -> Result<impl Responder, Error> {
+
     println!("Search term: {}", form.term);
+    let scrapers = form.stores
+        .iter()
+        .map(|s| ProductSearch::scraper_from_store_name(s).expect("store not real"))
+        .collect();
+
     let search = ProductSearch::default(form.term)
+        .set_scrapers(scrapers)
         .stream_search()
         .await
         .unwrap();

@@ -6,6 +6,7 @@ use crate::scraping::error::Error;
 use infra::ProductScraping;
 pub mod scrapers;
 
+use scrapers::ebay::EbayScraper;
 use scrapers::stockx::StockxScraper;
 
 pub mod infra;
@@ -109,7 +110,8 @@ impl ProductSearch {
                                     
                                     
                                 };
-                                drop(c);
+                                //
+                                // drop(c);
                                 // let result = scraper
                                 //     .stream_product_search( tx.clone(), term, self.limit.clone());
     
@@ -162,10 +164,27 @@ impl ProductSearch {
         self.scrapers.push(scraper);
         self
     }
+
+    pub fn set_scrapers(mut self, scrapers: Vec<Box<dyn ProductScraping>>) -> Self {
+        self.scrapers = scrapers;
+        self
+    }
+
     pub fn with_limit(mut self, limit: usize) -> Self {
         self.limit = limit;
         self
     }
+
+    pub fn scraper_from_store_name(store_name: &str) -> Option<Box<dyn ProductScraping>> {
+        match store_name {
+            "StockX" => Some(Box::new(StockxScraper)),
+            "Ebay" => Some(Box::new(EbayScraper)),
+            _ => None,
+        }
+    }
+
+    
+    
 }
 
 

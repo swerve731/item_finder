@@ -17,7 +17,7 @@ impl ProductScraping for EbayScraper {
         "Ebay".to_string()
     }
     fn store_color(&self) -> String{
-        "#E53238".to_string()
+        "#86B817".to_string()
     }
 
     
