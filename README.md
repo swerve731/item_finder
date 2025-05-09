@@ -1,4 +1,4 @@
-# Item finder
+# Item finder 
 
 A web scraping tool built with Rust that fetches product information (title, images and price) from StockX and eBay, and more in the future. based on a search term. It uses `fantoccini` for browser automation to handle dynamic content and `scraper` for parsing the HTML structure.
 
